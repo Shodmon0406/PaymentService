@@ -19,7 +19,7 @@ public class Payment : BaseEntity
     public Order Order { get; private set; } = null!;
     public User User { get; private set; } = null!;
 
-    protected Payment()
+    private Payment()
     {
     }
 

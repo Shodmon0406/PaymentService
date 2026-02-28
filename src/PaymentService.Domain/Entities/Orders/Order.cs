@@ -18,7 +18,7 @@ public class Order : BaseEntity
     public User User { get; private set; } = null!;
     public IReadOnlyCollection<Payment> Payments => _payments.AsReadOnly();
 
-    public Order()
+    private Order()
     {
     }
 

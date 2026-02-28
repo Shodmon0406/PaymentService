@@ -52,7 +52,7 @@ public sealed class Role : BaseEntity
             if (description.Length > 500)
             {
                 return Result.Failure<Role>(
-                    Error.Validation("Role. Description.TooLong", "Description cannot exceed 500 characters"));
+                    Error.Validation("Role.Description.TooLong", "Description cannot exceed 500 characters"));
             }
         }
 

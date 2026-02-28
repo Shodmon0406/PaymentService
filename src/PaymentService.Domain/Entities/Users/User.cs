@@ -3,7 +3,7 @@ using PaymentService.Domain.ValueObjects;
 
 namespace PaymentService.Domain.Entities.Users;
 
-public sealed partial class User : BaseEntity
+public sealed class User : BaseEntity
 {
     private readonly List<UserRole> _userRoles = [];
     private readonly List<RefreshToken> _refreshTokens = [];
@@ -13,7 +13,7 @@ public sealed partial class User : BaseEntity
     public string FullName { get; private set; } = null!;
     public PasswordHash PasswordHash { get; private set; } = null!;
 
-    public DateTime? LastLoginAt { get; private set; }
+    public DateTimeOffset? LastLoginAt { get; private set; }
 
     public IReadOnlyCollection<UserRole> UserRoles => _userRoles.AsReadOnly();
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
