@@ -6,7 +6,7 @@ using PaymentService.Domain.Entities.Orders;
 
 namespace PaymentService.Application.Features.Orders.Commands.CreateOrder;
 
-public sealed class CreateCommandHandler(IApplicationDbContext dbContext) : IRequestHandler<CreateOrderCommand, Result<OrderDto>>
+public sealed class CreateOrderCommandHandler(IApplicationDbContext dbContext) : IRequestHandler<CreateOrderCommand, Result<OrderDto>>
 {
     public async Task<Result<OrderDto>> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
