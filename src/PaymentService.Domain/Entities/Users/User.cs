@@ -1,12 +1,12 @@
 ﻿using PaymentService.Domain.Common;
+using PaymentService.Domain.Entities.Orders;
+using PaymentService.Domain.Entities.Payments;
 using PaymentService.Domain.ValueObjects;
 
 namespace PaymentService.Domain.Entities.Users;
 
 public sealed class User : BaseEntity
 {
-    private readonly List<UserRole> _userRoles = [];
-    private readonly List<RefreshToken> _refreshTokens = [];
 
     public PhoneNumber PhoneNumber { get; private set; }
     public Email? Email { get; private set; }
@@ -15,8 +15,17 @@ public sealed class User : BaseEntity
 
     public DateTimeOffset? LastLoginAt { get; private set; }
 
+    private readonly List<UserRole> _userRoles = [];
     public IReadOnlyCollection<UserRole> UserRoles => _userRoles.AsReadOnly();
+    
+    private readonly List<RefreshToken> _refreshTokens = [];
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
+    
+    private readonly List<Payment> _payments = [];
+    public IReadOnlyCollection<Payment> Payments => _payments.AsReadOnly();
+    
+    private readonly List<Order> _orders = [];
+    public IReadOnlyCollection<Order> Orders => _orders.AsReadOnly();
 
 
     private User() { }

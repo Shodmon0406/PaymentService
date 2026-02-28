@@ -13,6 +13,8 @@ public class Order : BaseEntity
 
     public Guid UserId { get; private set; }
     public Money Money { get; private set; }
+    public decimal Amount => Money.Amount;
+    public string Currency => Money.Currency;
     public OrderStatus Status { get; private set; }
 
     public User User { get; private set; } = null!;
