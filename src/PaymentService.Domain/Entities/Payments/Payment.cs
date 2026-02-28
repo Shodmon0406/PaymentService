@@ -2,6 +2,7 @@
 using PaymentService.Domain.Entities.Orders;
 using PaymentService.Domain.Entities.Users;
 using PaymentService.Domain.Enums.Payments;
+using PaymentService.Domain.Events;
 using PaymentService.Domain.ValueObjects;
 
 namespace PaymentService.Domain.Entities.Payments;
@@ -10,21 +11,23 @@ public class Payment : BaseEntity
 {
     public Guid OrderId { get; private set; }
     public Guid UserId { get; private set; }
-    public Money Amount { get; private set; }
+    public Money Money { get; private set; }
+    public decimal Amount => Money.Amount;
+    public string Currency => Money.Currency;
     public PaymentStatus Status { get; private set; }
 
     public Order Order { get; private set; } = null!;
     public User User { get; private set; } = null!;
 
-    public Payment()
+    protected Payment()
     {
     }
 
-    private Payment(Guid orderId, Guid userId, Money amount, PaymentStatus status)
+    private Payment(Guid orderId, Guid userId, Money money, PaymentStatus status)
     {
         OrderId = orderId;
         UserId = userId;
-        Amount = amount;
+        Money = money;
         Status = status;
     }
 
@@ -54,6 +57,8 @@ public class Payment : BaseEntity
         }
 
         Status = PaymentStatus.Successful;
+        UpdateTimestamp();
+        AddDomainEvent(new PaymentSucceededDomainEvent(Id, OrderId));
         return Result.Success();
     }
 
@@ -66,6 +71,7 @@ public class Payment : BaseEntity
         }
 
         Status = PaymentStatus.Failed;
+        UpdateTimestamp();
         return Result.Success();
     }
 }
