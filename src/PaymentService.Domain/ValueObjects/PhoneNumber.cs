@@ -89,5 +89,5 @@ public sealed class PhoneNumber : ValueObject
 
     public override string ToString() => FormattedValue;
 
-    public static implicit operator string?(PhoneNumber? phoneNumber) => phoneNumber?.Value;
+    public static implicit operator string(PhoneNumber phoneNumber) => phoneNumber.Value;
 }

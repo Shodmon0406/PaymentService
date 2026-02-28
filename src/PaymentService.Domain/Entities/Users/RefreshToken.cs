@@ -24,7 +24,7 @@ public sealed class RefreshToken : BaseEntity
     public bool IsRevoked => RevokedAt != null;
     public bool IsActive => !IsRevoked && !IsExpired;
 
-    private RefreshToken() { } // Для EF Core
+    private RefreshToken() { } // EF Core
 
     private RefreshToken(
         Guid userId,

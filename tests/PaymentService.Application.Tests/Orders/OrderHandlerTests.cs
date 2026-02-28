@@ -78,7 +78,7 @@ public class OrderHandlerTests : IDisposable
 
         var order = await ctx.Orders.FirstOrDefaultAsync();
         order.Should().NotBeNull();
-        order!.Status.Should().Be(OrderStatus.Created);
+        order.Status.Should().Be(OrderStatus.Created);
         order.UserId.Should().Be(user.Id);
     }
 
