@@ -22,7 +22,7 @@ public sealed class LoginCommandHandler(
         var user = await dbContext.Users
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
-            .FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber.Value, cancellationToken);
+            .FirstOrDefaultAsync(u => u.PhoneNumber.Value == phoneNumber.Value, cancellationToken);
         
         if (user is null || !user.VerifyPassword(request.Password))
             return Result.Failure<AuthResponse>(Error.Unauthorized("Auth.InvalidCredentials", "Invalid phone number or password."));

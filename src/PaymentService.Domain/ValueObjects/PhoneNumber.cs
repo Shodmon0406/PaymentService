@@ -9,7 +9,7 @@ public sealed class PhoneNumber : ValueObject
     private const int MaxLength = 15;
 
     // Todo: Только таджикские номера
-    private static readonly Regex PhoneRegex = new(@"^\+?[0-9\s\-\(\)]+$", RegexOptions.Compiled);
+    private static readonly Regex PhoneRegex = new(@"^\+[0-9\s\-\(\)]+$", RegexOptions.Compiled);
 
     public string Value { get; }
 
