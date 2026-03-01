@@ -10,8 +10,7 @@ public sealed class Role : BaseEntity
     {
         public const string SuperAdmin = "SuperAdmin";
         public const string Admin = "Admin";
-        public const string Teacher = "Teacher";
-        public const string Student = "Student";
+        public const string User = "User";
         public const string Guest = "Guest";
     }
 
@@ -69,7 +68,7 @@ public sealed class Role : BaseEntity
             if (description.Length > 500)
             {
                 return Result.Failure(
-                    Error.Validation("Role. Description.TooLong", "Description cannot exceed 500 characters"));
+                    Error.Validation("Role.Description.TooLong", "Description cannot exceed 500 characters"));
             }
         }
 
@@ -81,6 +80,6 @@ public sealed class Role : BaseEntity
 
     public bool IsSystemRole()
     {
-        return Name is Names.SuperAdmin or Names.Admin or Names.Teacher or Names.Student or Names.Guest;
+        return Name is Names.SuperAdmin or Names.Admin or Names.User or Names.Guest;
     }
 }

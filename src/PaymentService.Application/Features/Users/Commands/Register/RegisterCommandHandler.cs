@@ -35,9 +35,17 @@ public sealed class RegisterCommandHandler(
         var refreshToken = user.AddRefreshToken(rawToken, request.IpAddress);
         dbContext.RefreshTokens.Add(refreshToken);
         
+        var defaultRole = await dbContext.Roles.FirstOrDefaultAsync(r => r.Name == Role.Names.User, cancellationToken);
+        
+        if (defaultRole != null)
+        {
+            var userRole = UserRole.Create(user.Id, defaultRole.Id);
+            dbContext.UserRoles.Add(userRole);
+        }
+        
         await dbContext.SaveChangesAsync(cancellationToken);
         
-        var accessToken = tokenService.GenerateAccessToken(user);
+        var accessToken = tokenService.GenerateAccessToken(user, [Role.Names.User]);
         
         return Result.Success(new AuthResponse(accessToken, rawToken, user.Id, user.FullName));
     }

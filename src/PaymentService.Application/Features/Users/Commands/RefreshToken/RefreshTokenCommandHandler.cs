@@ -32,7 +32,13 @@ public sealed class RefreshTokenCommandHandler(
         
         await dbContext.SaveChangesAsync(cancellationToken);
         
-        var accessToken = jwtTokenService.GenerateAccessToken(user);
+        var roles = await dbContext.UserRoles
+            .AsNoTracking()
+            .Where(ur => ur.UserId == user.Id)
+            .Select(ur => ur.Role.Name)
+            .ToListAsync(cancellationToken);
+        
+        var accessToken = jwtTokenService.GenerateAccessToken(user, roles);
         
         return Result.Success(new AuthResponse(accessToken, newRawToken, user.Id, user.FullName));
     }

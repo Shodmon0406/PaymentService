@@ -30,7 +30,7 @@ public class UserHandlerTest : IDisposable
         ctx.Database.EnsureCreated();
 
         _jwtTokenService = Substitute.For<IJwtTokenService>();
-        _jwtTokenService.GenerateAccessToken(Arg.Any<User>()).Returns("access-token");
+        _jwtTokenService.GenerateAccessToken(Arg.Any<User>(), [Role.Names.User]).Returns("access-token");
 
         _refreshTokenGenerator = Substitute.For<IRefreshTokenGenerator>();
         _refreshTokenGenerator.Generate().Returns(_ => Guid.NewGuid().ToString("N"));

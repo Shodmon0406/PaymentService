@@ -1,21 +1,31 @@
 using Microsoft.EntityFrameworkCore;
+using PaymentService.Api.Extensions;
+using PaymentService.Application;
 using PaymentService.Infrastructure;
 using PaymentService.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
 
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddSwagger();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Payment service API v1");
+        options.RoutePrefix = "swagger"; 
+        options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+        options.DefaultModelsExpandDepth(-1); // Скрыть схемы по умолчанию
+    });
 }
 
 using (var scope = app.Services.CreateScope())
@@ -25,5 +35,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseHttpsRedirection();
+
+app.MapControllers();
 
 app.Run();
