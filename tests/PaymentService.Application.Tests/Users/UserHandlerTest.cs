@@ -30,7 +30,7 @@ public class UserHandlerTest : IDisposable
         ctx.Database.EnsureCreated();
 
         _jwtTokenService = Substitute.For<IJwtTokenService>();
-        _jwtTokenService.GenerateAccessToken(Arg.Any<User>(), [Role.Names.User]).Returns("access-token");
+        _jwtTokenService.GenerateAccessToken(Arg.Any<User>(), Arg.Any<IEnumerable<string>>()).Returns("access-token");
 
         _refreshTokenGenerator = Substitute.For<IRefreshTokenGenerator>();
         _refreshTokenGenerator.Generate().Returns(_ => Guid.NewGuid().ToString("N"));
@@ -52,7 +52,7 @@ public class UserHandlerTest : IDisposable
     }
 
     private async Task<AuthResponse> RegisterUserAsync(
-        string phone = "992901234567",
+        string phone = "+992901234567",
         string email = "test@mail.com",
         string fullName = "Test User",
         string password = "Password1")
@@ -137,7 +137,7 @@ public class UserHandlerTest : IDisposable
         var handler = new LoginCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator);
 
         // Act
-        var result = await handler.Handle(new LoginCommand("992901234567", "Password1", "127.0.0.1"),
+        var result = await handler.Handle(new LoginCommand("+992901234567", "Password1", "127.0.0.1"),
             CancellationToken.None);
 
         // Assert
@@ -307,7 +307,7 @@ public class UserHandlerTest : IDisposable
         var userDto = result.Value;
         userDto.Id.Should().Be(userId);
         userDto.FullName.Should().Be(registered.FullName);
-        userDto.PhoneNumber.Should().Be("992901234567");
+        userDto.PhoneNumber.Should().Be("+992901234567");
         userDto.Email.Should().Be("test@mail.com");
     }
 
