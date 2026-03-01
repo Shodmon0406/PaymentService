@@ -13,6 +13,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"/>
+        <PackageReference Include="Polly"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -22,7 +23,7 @@
 
     <ItemGroup>
         <Folder Include="Persistence\Migrations\"/>
-        <Folder Include="Persistence\Seeds\" />
+        <Folder Include="Persistence\Seeds\"/>
     </ItemGroup>
 
 </Project>

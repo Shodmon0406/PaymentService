@@ -8,42 +8,65 @@ using PaymentService.Domain.Enums.Payments;
 
 namespace PaymentService.Application.Features.Payments.Commands.ConfirmPayment;
 
-public sealed class ConfirmPaymentCommandHandler(IApplicationDbContext dbContext, IOrderLockService orderLockService)
+public sealed class ConfirmPaymentCommandHandler(
+    IApplicationDbContext dbContext,
+    IOrderLockService orderLockService,
+    IPaymentProviderClient paymentProviderClient)
     : IRequestHandler<ConfirmPaymentCommand, Result<PaymentResponse>>
 {
     public async Task<Result<PaymentResponse>> Handle(ConfirmPaymentCommand request,
         CancellationToken cancellationToken)
     {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        
         var payment = await dbContext.Payments
             .Include(p => p.Order)
             .FirstOrDefaultAsync(p => p.Id == request.PaymentId && p.UserId == request.UserId, cancellationToken);
 
         if (payment is null)
-            return Result.Failure<PaymentResponse>(Error.NotFound("Payment.NotFound",
+            return Result.Failure<PaymentResponse>(Error.NotFound("Payment.NotFound", 
                 $"Payment {request.PaymentId} was not found"));
-        
+
+        var chargeRequest = new ProviderChargeRequest(payment.Id, payment.Amount, payment.Currency);
+
+        var chargeResult = await paymentProviderClient.ChargeAsync(chargeRequest, cancellationToken);
+
+        if (chargeResult.Status != ProviderChargeStatus.Succeeded)
+        {
+            payment.MarkAsFailed();
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return chargeResult.Status switch
+            {
+                ProviderChargeStatus.Failed => Result.Failure<PaymentResponse>(Error.PaymentFailed("Payment.Declined",
+                    chargeResult.ErrorMessage ?? "Payment was declined by provider")),
+                ProviderChargeStatus.Unavailable => Result.Failure<PaymentResponse>(Error.PaymentFailed("Payment.ProviderUnavailable",
+                    chargeResult.ErrorMessage ?? "Payment provider is currently unavailable")),
+                _ => Result.Failure<PaymentResponse>(Error.PaymentFailed("Payment.ProviderFailed",
+                    chargeResult.ErrorMessage ?? "Payment failed at provider"))
+            };
+        }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         await orderLockService.AcquireLockAsync(payment.OrderId, cancellationToken);
-        
+
         var freshPayment = await dbContext.Payments
             .Include(p => p.Order)
             .FirstOrDefaultAsync(p => p.Id == request.PaymentId, cancellationToken);
-        
+
         if (freshPayment is null)
             return Result.Failure<PaymentResponse>(Error.NotFound("Payment.NotFound",
                 $"Payment {request.PaymentId} was not found"));
 
         if (freshPayment.Status != PaymentStatus.Pending)
-            return Result.Failure<PaymentResponse>(
-                Error.Conflict("Payment.Status", "The payment is no longer in Pending status."));
+            return Result.Failure<PaymentResponse>(Error.Conflict("Payment.Status",
+                "The payment is no longer in Pending status."));
 
         var hasSuccessfulPayment = await dbContext.Payments
-            .AnyAsync(p => p.OrderId == freshPayment.OrderId && p.Status == PaymentStatus.Successful, cancellationToken);
+            .AnyAsync(p => p.OrderId == freshPayment.OrderId && p.Status == PaymentStatus.Successful,
+                cancellationToken);
 
         if (hasSuccessfulPayment)
-            return Result.Failure<PaymentResponse>(
-                Error.Conflict("Payment.AlreadyConfirmed", "Another payment for this order has already been confirmed."));
+            return Result.Failure<PaymentResponse>(Error.Conflict("Payment.AlreadyConfirmed",
+                    "Another payment for this order has already been confirmed."));
 
         var confirmResult = freshPayment.MarkAsCompleted();
         if (confirmResult.IsFailure)
@@ -55,7 +78,7 @@ public sealed class ConfirmPaymentCommandHandler(IApplicationDbContext dbContext
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        
+
         var response = new PaymentResponse(
             freshPayment.Id,
             freshPayment.OrderId,
@@ -64,7 +87,7 @@ public sealed class ConfirmPaymentCommandHandler(IApplicationDbContext dbContext
             freshPayment.Currency,
             freshPayment.Status,
             freshPayment.CreatedAt);
-        
+
         return Result.Success(response);
     }
 }

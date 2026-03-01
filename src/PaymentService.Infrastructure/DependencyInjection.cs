@@ -6,7 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using PaymentService.Application.Auth;
 using PaymentService.Application.Common;
+using PaymentService.Application.Features.Services;
 using PaymentService.Infrastructure.Auth;
+using PaymentService.Infrastructure.PaymentProvider;
 using PaymentService.Infrastructure.Persistence;
 
 namespace PaymentService.Infrastructure;
@@ -16,8 +18,7 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")
-                               ?? throw new InvalidOperationException(
-                                   "Connection string 'DefaultConnection' is not configured.");
+                               ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
 
         services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
 
@@ -25,10 +26,17 @@ public static class DependencyInjection
 
         services.AddHttpContextAccessor();
 
+        // Auth
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<IRefreshTokenGenerator, RefreshTokenJGenerator>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        
+        // Payment provider: fake implementation wrapped with Polly resilience policies
+        services.Configure<FakePaymentProviderOptions>(configuration.GetSection(FakePaymentProviderOptions.SectionName));
+        services.AddSingleton<FakePaymentProviderClient>();
+        services.AddSingleton<IPaymentProviderClient>(provider =>
+            new ResilientPaymentProviderClient(provider.GetRequiredService<FakePaymentProviderClient>()));
 
         var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
                           ?? throw new InvalidOperationException("JwtSettings not configured");

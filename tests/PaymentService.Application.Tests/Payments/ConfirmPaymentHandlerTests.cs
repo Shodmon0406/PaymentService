@@ -12,6 +12,7 @@ using PaymentService.Domain.Common;
 using PaymentService.Domain.Entities.Users;
 using PaymentService.Domain.Enums.Orders;
 using PaymentService.Domain.Enums.Payments;
+using PaymentService.Infrastructure.PaymentProvider;
 using PaymentService.Infrastructure.Persistence;
 
 namespace PaymentService.Application.Tests.Payments;
@@ -30,13 +31,13 @@ public class ConfirmPaymentHandlerTests : IDisposable
 
         using var context = CreateDbContext();
         context.Database.EnsureCreated();
-        
+
         _jwtTokenService = Substitute.For<IJwtTokenService>();
         _jwtTokenService.GenerateAccessToken(Arg.Any<User>(), Arg.Any<IEnumerable<string>>()).Returns("access_token");
-        
+
         _refreshTokenGenerator = Substitute.For<IRefreshTokenGenerator>();
         _refreshTokenGenerator.Generate().Returns(_ => Guid.NewGuid().ToString("N"));
-        
+
         _orderLockService = Substitute.For<IOrderLockService>();
         _orderLockService.AcquireLockAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
     }
@@ -81,7 +82,13 @@ public class ConfirmPaymentHandlerTests : IDisposable
         result.IsSuccess.Should().BeTrue();
         return result.Value.Id;
     }
-    
+
+    private ConfirmPaymentCommandHandler CreateHandler(IPaymentProviderClient? paymentProvider = null)
+    {
+        paymentProvider ??= new FakePaymentProviderClient(new FakePaymentProviderOptions { SuccessRate = 1.0 });
+        return new ConfirmPaymentCommandHandler(CreateDbContext(), _orderLockService, paymentProvider);
+    }
+
     [Fact]
     public async Task ConfirmPayment_WithValidPendingPayment_ShouldSucceed()
     {
@@ -90,8 +97,8 @@ public class ConfirmPaymentHandlerTests : IDisposable
         var userId = await RegisterUserAsync();
         var orderId = await CreateOrderAsync(userId);
         var paymentId = await CreatePaymentAsync(userId, orderId);
-        
-        var handler = new ConfirmPaymentCommandHandler(context, _orderLockService);
+
+        var handler = CreateHandler();
         var command = new ConfirmPaymentCommand(userId, paymentId);
 
         // Act
@@ -103,21 +110,20 @@ public class ConfirmPaymentHandlerTests : IDisposable
         result.Value.OrderId.Should().Be(orderId);
         result.Value.UserId.Should().Be(userId);
         result.Value.Status.Should().Be(PaymentStatus.Successful);
-        
+
         var dbOrder = await context.Orders.FindAsync(orderId);
         dbOrder.Should().NotBeNull();
         dbOrder.Status.Should().Be(OrderStatus.Paid);
     }
-    
+
     [Fact]
     public async Task ConfirmPayment_WithNonExistentPayment_ShouldFail()
     {
         // Arrange
-        var context = CreateDbContext();
         var userId = await RegisterUserAsync();
         var nonExistentPaymentId = Guid.NewGuid();
-        
-        var handler = new ConfirmPaymentCommandHandler(context, _orderLockService);
+
+        var handler = CreateHandler();
         var command = new ConfirmPaymentCommand(userId, nonExistentPaymentId);
 
         // Act
@@ -127,7 +133,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
         result.IsFailure.Should().BeTrue();
         result.Error.Type.Should().Be(ErrorType.NotFound);
     }
-    
+
     [Fact]
     public async Task ConfirmPayment_WhenOrderAlreadyPaid_ShouldFail()
     {
@@ -136,14 +142,14 @@ public class ConfirmPaymentHandlerTests : IDisposable
         var userId = await RegisterUserAsync();
         var orderId = await CreateOrderAsync(userId);
         var firstPaymentId = await CreatePaymentAsync(userId, orderId);
-        
+
         // Simulate another payment being confirmed for the same order
         var order = await context.Orders.FindAsync(orderId);
         order.Should().NotBeNull();
         order.MarkAsPaid();
         await context.SaveChangesAsync();
-        
-        var confirmHandler = new ConfirmPaymentCommandHandler(context, _orderLockService);
+
+        var confirmHandler = CreateHandler();
         var command = new ConfirmPaymentCommand(userId, firstPaymentId);
 
         // Act
@@ -153,17 +159,16 @@ public class ConfirmPaymentHandlerTests : IDisposable
         confirmResult.IsFailure.Should().BeTrue();
         confirmResult.Error.Type.Should().Be(ErrorType.Conflict);
     }
-    
+
     [Fact]
     public async Task ConfirmPayment_WithAlreadyConfirmedPayment_ShouldFail()
     {
         // Arrange
-        var context = CreateDbContext();
         var userId = await RegisterUserAsync();
         var orderId = await CreateOrderAsync(userId);
         var paymentId = await CreatePaymentAsync(userId, orderId);
-        
-        var confirmHandler = new ConfirmPaymentCommandHandler(context, _orderLockService);
+
+        var confirmHandler = CreateHandler();
         var confirmCommand = new ConfirmPaymentCommand(userId, paymentId);
         var confirmResult = await confirmHandler.Handle(confirmCommand, CancellationToken.None);
         confirmResult.IsSuccess.Should().BeTrue();
@@ -175,21 +180,20 @@ public class ConfirmPaymentHandlerTests : IDisposable
         secondConfirmResult.IsFailure.Should().BeTrue();
         secondConfirmResult.Error.Code.Should().Be("Payment.Status");
     }
-    
+
     [Fact]
     public async Task ConfirmPayment_WhenAnotherPaymentAlreadyConfirmed_ShouldFail()
     {
         // Arrange
-        var context = CreateDbContext();
         var userId = await RegisterUserAsync();
         var orderId = await CreateOrderAsync(userId);
         var firstPaymentId = await CreatePaymentAsync(userId, orderId);
         var secondPaymentId = await CreatePaymentAsync(userId, orderId);
-        
-        var confirmHandler = new ConfirmPaymentCommandHandler(context, _orderLockService);
+
+        var confirmHandler = CreateHandler();
         var firstConfirmCommand = new ConfirmPaymentCommand(userId, firstPaymentId);
         var secondConfirmCommand = new ConfirmPaymentCommand(userId, secondPaymentId);
-        
+
         var firstConfirmResult = await confirmHandler.Handle(firstConfirmCommand, CancellationToken.None);
         firstConfirmResult.IsSuccess.Should().BeTrue();
 
@@ -200,7 +204,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
         secondConfirmResult.IsFailure.Should().BeTrue();
         secondConfirmResult.Error.Code.Should().Be("Payment.AlreadyConfirmed");
     }
-    
+
     [Fact]
     public async Task ConfirmPayment_WithConcurrentConfirms_ShouldOnlyAllowOne()
     {
@@ -209,26 +213,86 @@ public class ConfirmPaymentHandlerTests : IDisposable
         var userId = await RegisterUserAsync();
         var orderId = await CreateOrderAsync(userId);
         var paymentId = await CreatePaymentAsync(userId, orderId);
-        
-        var handler1 = new ConfirmPaymentCommandHandler(context, _orderLockService);
-        var handler2 = new ConfirmPaymentCommandHandler(context, _orderLockService);
-        
+
+        var handler1 = CreateHandler();
+        var handler2 = CreateHandler();
+
         var command1 = new ConfirmPaymentCommand(userId, paymentId);
         var command2 = new ConfirmPaymentCommand(userId, paymentId);
 
         // Act
         var task1 = handler1.Handle(command1, CancellationToken.None);
         var task2 = handler2.Handle(command2, CancellationToken.None);
-        
+
         await Task.WhenAll(task1, task2);
 
         // Assert
         var results = new[] { await task1, await task2 };
         results.Count(r => r.IsSuccess).Should().Be(1);
         results.Count(r => r.IsFailure).Should().Be(1);
-        
+
         var dbOrder = await context.Orders.FindAsync(orderId);
         dbOrder.Should().NotBeNull();
         dbOrder.Status.Should().Be(OrderStatus.Paid);
+    }
+
+    [Fact]
+    public async Task ConfirmPayment_WhenProviderUnavailable_ShouldMarkPaymentAsFailed()
+    {
+        // Arrange
+        var context = CreateDbContext();
+        var userId = await RegisterUserAsync();
+        var orderId = await CreateOrderAsync(userId);
+        var paymentId = await CreatePaymentAsync(userId, orderId);
+
+        var unavailableProvider = new ResilientPaymentProviderClient(new FakePaymentProviderClient(
+            new FakePaymentProviderOptions
+            {
+                AlwaysUnavailable = true
+            }));
+
+        var handler = CreateHandler(unavailableProvider);
+        var command = new ConfirmPaymentCommand(userId, paymentId);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsFailure.Should().BeTrue();
+        result.Error.Type.Should().Be(ErrorType.PaymentFailed);
+
+        var dbPayment = await context.Payments.FindAsync(paymentId);
+        dbPayment.Should().NotBeNull();
+        dbPayment.Status.Should().Be(PaymentStatus.Failed);
+    }
+
+    [Fact]
+    public async Task ConfirmPayment_WhenProviderDeclines_ShouldMarkPaymentAsFailed()
+    {
+        // Arrange
+        var context = CreateDbContext();
+        var userId = await RegisterUserAsync();
+        var orderId = await CreateOrderAsync(userId);
+        var paymentId = await CreatePaymentAsync(userId, orderId);
+
+        var decliningProvider = new ResilientPaymentProviderClient(new FakePaymentProviderClient(
+            new FakePaymentProviderOptions
+            {
+                AlwaysDecline = true
+            }));
+
+        var handler = CreateHandler(decliningProvider);
+        var command = new ConfirmPaymentCommand(userId, paymentId);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsFailure.Should().BeTrue();
+        result.Error.Type.Should().Be(ErrorType.PaymentFailed);
+
+        var dbPayment = await context.Payments.FindAsync(paymentId);
+        dbPayment.Should().NotBeNull();
+        dbPayment.Status.Should().Be(PaymentStatus.Failed);
     }
 }

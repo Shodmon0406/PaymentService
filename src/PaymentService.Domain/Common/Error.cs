@@ -29,6 +29,8 @@ public class Error
     public static Error Failure(string code, string message) => new(code, message, ErrorType.Failure);
 
     public static Error ServiceUnavailable(string code, string message) => new(code, message, ErrorType.ServiceUnavailable);
+    
+    public static Error PaymentFailed(string code, string message) => new(code, message, ErrorType.PaymentFailed);
 }
 
 public enum ErrorType
@@ -40,5 +42,6 @@ public enum ErrorType
     Unauthorized,
     Forbidden,
     Failure,
-    ServiceUnavailable
+    ServiceUnavailable,
+    PaymentFailed
 }

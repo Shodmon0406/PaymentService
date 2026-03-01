@@ -16,6 +16,14 @@ builder.Services.AddSwagger();
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -28,13 +36,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
-
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 
