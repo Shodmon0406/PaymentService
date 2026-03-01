@@ -26,6 +26,8 @@ public static class DependencyInjection
 
         services.AddHttpContextAccessor();
 
+        services.AddScoped<IOrderLockService, PostgresOrderLockService>();
+
         // Auth
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.AddSingleton<IJwtTokenService, JwtTokenService>();

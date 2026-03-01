@@ -19,7 +19,7 @@ public sealed class RefreshTokenCommandHandler(
             .FirstOrDefaultAsync(u => u.RefreshTokens.Any(rt => rt.Token == request.RefreshToken), cancellationToken);
 
         if (user is null)
-            return Result.Failure<AuthResponse>(Error.Unauthorized("RefreshToken.Invalid", "Invalid refresh token."));
+            return Result.Failure<AuthResponse>(Error.Validation("RefreshToken.Invalid", "Invalid refresh token."));
         
         var newRawToken = refreshTokenGenerator.Generate();
         

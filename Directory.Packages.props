@@ -1,33 +1,35 @@
 <Project>
-  <PropertyGroup>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-  </PropertyGroup>
-  <ItemGroup>
-    <!-- Production packages -->
-    <PackageVersion Include="BCrypt.Net-Next" Version="4.1.0" />
-    <PackageVersion Include="FluentValidation" Version="12.1.1" />
-    <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.1" />
-    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-    <PackageVersion Include="MediatR" Version="14.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.9" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.3" />
-    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
-    <PackageVersion Include="Polly" Version="8.5.0" />
-    <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
-    <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.1.4" />
-    <!-- Test packages -->
-    <PackageVersion Include="coverlet.collector" Version="8.0.0" />
-    <PackageVersion Include="FluentAssertions" Version="8.8.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
-    <PackageVersion Include="NSubstitute" Version="5.3.0" />
-    <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
-  </ItemGroup>
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+    <ItemGroup>
+        <!-- Production packages -->
+        <PackageVersion Include="BCrypt.Net-Next" Version="4.1.0"/>
+        <PackageVersion Include="FluentValidation" Version="12.1.1"/>
+        <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.1"/>
+        <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1"/>
+        <PackageVersion Include="MediatR" Version="14.0.0"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.9"/>
+        <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3"/>
+        <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.3"/>
+        <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3"/>
+        <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.3"/>
+        <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.3"/>
+        <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.3"/>
+        <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0"/>
+        <PackageVersion Include="Polly" Version="8.5.0"/>
+        <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0"/>
+        <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.3"/>
+        <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.1.4"/>
+        <PackageVersion Include="Testcontainers.PostgreSql" Version="4.10.0"/>
+        <!-- Test packages -->
+        <PackageVersion Include="coverlet.collector" Version="8.0.0"/>
+        <PackageVersion Include="FluentAssertions" Version="8.8.0"/>
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0"/>
+        <PackageVersion Include="NSubstitute" Version="5.3.0"/>
+        <PackageVersion Include="xunit" Version="2.9.3"/>
+        <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5"/>
+    </ItemGroup>
 </Project>
