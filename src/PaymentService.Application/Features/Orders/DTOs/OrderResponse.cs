@@ -2,7 +2,7 @@
 
 namespace PaymentService.Application.Features.Orders.DTOs;
 
-public sealed record OrderDto(
+public sealed record OrderResponse(
     Guid Id,
     Guid UserId,
     decimal Amount,

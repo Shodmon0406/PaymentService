@@ -4,4 +4,4 @@ using PaymentService.Domain.Common;
 
 namespace PaymentService.Application.Features.Payments.Queries.GetPaymentsByOrder;
 
-public sealed record GetPaymentsByOrderQuery(Guid UserId, Guid OrderId) : IRequest<Result<IReadOnlyList<PaymentDto>>>;
+public sealed record GetPaymentsByOrderQuery(Guid UserId, Guid OrderId) : IRequest<Result<IReadOnlyList<PaymentResponse>>>;

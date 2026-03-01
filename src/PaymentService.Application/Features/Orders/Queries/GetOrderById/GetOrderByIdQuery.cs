@@ -6,4 +6,4 @@ namespace PaymentService.Application.Features.Orders.Queries.GetOrderById;
 
 public sealed record GetOrderByIdQuery(
     Guid OrderId,
-    Guid UserId) : IRequest<Result<OrderDto>>;
+    Guid UserId) : IRequest<Result<OrderResponse>>;

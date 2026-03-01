@@ -6,4 +6,4 @@ namespace PaymentService.Application.Features.Payments.Commands.CreatePayment;
 
 public sealed record CreatePaymentCommand(
     Guid UserId,
-    Guid OrderId) : IRequest<Result<PaymentDto>>;
+    Guid OrderId) : IRequest<Result<PaymentResponse>>;

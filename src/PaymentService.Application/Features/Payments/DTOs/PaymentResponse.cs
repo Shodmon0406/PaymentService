@@ -2,7 +2,7 @@
 
 namespace PaymentService.Application.Features.Payments.DTOs;
 
-public sealed record PaymentDto(
+public sealed record PaymentResponse(
     Guid Id,
     Guid OrderId,
     Guid UserId,

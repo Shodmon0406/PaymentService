@@ -7,23 +7,23 @@ using PaymentService.Domain.Common;
 namespace PaymentService.Application.Features.Payments.Queries.GetPaymentsByOrder;
 
 public sealed class GetPaymentsByOrderQueryHandler(IApplicationDbContext dbContext)
-    : IRequestHandler<GetPaymentsByOrderQuery, Result<IReadOnlyList<PaymentDto>>>
+    : IRequestHandler<GetPaymentsByOrderQuery, Result<IReadOnlyList<PaymentResponse>>>
 {
-    public async Task<Result<IReadOnlyList<PaymentDto>>> Handle(GetPaymentsByOrderQuery request,
+    public async Task<Result<IReadOnlyList<PaymentResponse>>> Handle(GetPaymentsByOrderQuery request,
         CancellationToken cancellationToken)
     {
         var orderExists = await dbContext.Orders
             .AnyAsync(o => o.Id == request.OrderId && o.UserId == request.UserId, cancellationToken);
 
         if (!orderExists)
-            return Result.Failure<IReadOnlyList<PaymentDto>>(Error.NotFound("Order.NotFound",
+            return Result.Failure<IReadOnlyList<PaymentResponse>>(Error.NotFound("Order.NotFound",
                 $"Order '{request.OrderId}' was not found."));
 
         var payments = await dbContext.Payments
             .AsNoTracking()
             .Where(p => p.OrderId == request.OrderId && p.UserId == request.UserId)
             .OrderByDescending(p => p.Id)
-            .Select(p => new PaymentDto(
+            .Select(p => new PaymentResponse(
                 p.Id,
                 p.OrderId,
                 p.UserId,
@@ -33,6 +33,6 @@ public sealed class GetPaymentsByOrderQueryHandler(IApplicationDbContext dbConte
                 p.CreatedAt))
             .ToListAsync(cancellationToken);
 
-        return Result.Success<IReadOnlyList<PaymentDto>>(payments);
+        return Result.Success<IReadOnlyList<PaymentResponse>>(payments);
     }
 }

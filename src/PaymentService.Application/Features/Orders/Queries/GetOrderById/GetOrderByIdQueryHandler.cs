@@ -7,18 +7,18 @@ using PaymentService.Domain.Common;
 namespace PaymentService.Application.Features.Orders.Queries.GetOrderById;
 
 public sealed class GetOrderByIdQueryHandler(IApplicationDbContext dbContext)
-    : IRequestHandler<GetOrderByIdQuery, Result<OrderDto>>
+    : IRequestHandler<GetOrderByIdQuery, Result<OrderResponse>>
 {
-    public async Task<Result<OrderDto>> Handle(GetOrderByIdQuery request, CancellationToken cancellationToken)
+    public async Task<Result<OrderResponse>> Handle(GetOrderByIdQuery request, CancellationToken cancellationToken)
     {
         var order = await dbContext.Orders
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == request.OrderId && o.UserId == request.UserId, cancellationToken);
 
         if (order is null)
-            return Result.Failure<OrderDto>(Error.NotFound("Order.NotFound", "Order not found."));
+            return Result.Failure<OrderResponse>(Error.NotFound("Order.NotFound", "Order not found."));
 
-        return Result.Success(new OrderDto(
+        return Result.Success(new OrderResponse(
             order.Id,
             order.UserId,
             order.Amount,

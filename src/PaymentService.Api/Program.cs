@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using PaymentService.Api.Extensions;
+using PaymentService.Api.Common.Swagger;
 using PaymentService.Application;
 using PaymentService.Infrastructure;
 using PaymentService.Infrastructure.Persistence;

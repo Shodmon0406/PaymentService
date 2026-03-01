@@ -1,6 +1,6 @@
 ﻿using Microsoft.OpenApi;
 
-namespace PaymentService.Api.Extensions;
+namespace PaymentService.Api.Common.Swagger;
 
 public static class SwaggerExtension
 {
