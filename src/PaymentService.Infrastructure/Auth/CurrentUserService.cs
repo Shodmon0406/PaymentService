@@ -1,6 +1,5 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
-using Microsoft.IdentityModel.JsonWebTokens;
 using PaymentService.Application.Auth;
 
 namespace PaymentService.Infrastructure.Auth;

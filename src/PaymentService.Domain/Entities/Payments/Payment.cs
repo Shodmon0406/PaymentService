@@ -23,12 +23,12 @@ public class Payment : BaseEntity
     {
     }
 
-    private Payment(Guid orderId, Guid userId, Money money, PaymentStatus status)
+    private Payment(Guid orderId, Guid userId, Money money)
     {
         OrderId = orderId;
         UserId = userId;
         Money = money;
-        Status = status;
+        Status = PaymentStatus.Pending;
     }
 
     public static Result<Payment> Create(Guid orderId, Guid userId, decimal amount, string currency)
@@ -43,7 +43,7 @@ public class Payment : BaseEntity
         if (moneyResult.IsFailure) 
             return Result.Failure<Payment>(moneyResult.Error);
 
-        var payment = new Payment(orderId, userId, moneyResult.Value, PaymentStatus.Pending);
+        var payment = new Payment(orderId, userId, moneyResult.Value);
 
         return Result.Success(payment);
     }

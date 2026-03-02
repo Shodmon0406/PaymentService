@@ -19,13 +19,16 @@ public sealed class PaymentsController(ISender sender, ICurrentUserService curre
     [ProducesResponseType(typeof(PaymentResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> CreatePayment([FromRoute] Guid orderId, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreatePayment(
+        [FromRoute] Guid orderId,
+        [FromHeader(Name = "Idempotency-key")] string idempotencyKey,
+        CancellationToken cancellationToken)
     {
         var userId = currentUserService.UserId;
         if (userId is null)
             return Unauthorized();
 
-        var command = new CreatePaymentCommand(userId.Value, orderId);
+        var command = new CreatePaymentCommand(userId.Value, orderId, idempotencyKey);
         var result = await sender.Send(command, cancellationToken);
 
         return result.ToActionResult();
@@ -53,12 +56,15 @@ public sealed class PaymentsController(ISender sender, ICurrentUserService curre
     [ProducesResponseType(typeof(PaymentResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> ConfirmPayment([FromRoute] Guid paymentId, CancellationToken cancellationToken)
+    public async Task<IActionResult> ConfirmPayment(
+        [FromRoute] Guid paymentId, 
+        [FromHeader(Name = "Idempotency-key")] string idempotencyKey,
+        CancellationToken cancellationToken)
     {
         var userId = currentUserService.UserId;
         if (userId is null) return Unauthorized();
 
-        var command = new ConfirmPaymentCommand(userId.Value, paymentId);
+        var command = new ConfirmPaymentCommand(userId.Value, paymentId, idempotencyKey);
         var result = await sender.Send(command, cancellationToken);
 
         return result.ToActionResult();

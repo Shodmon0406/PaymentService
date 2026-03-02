@@ -12,8 +12,8 @@ public class CreatePaymentCommandHandler(IApplicationDbContext dbContext)
 {
     public async Task<Result<PaymentResponse>> Handle(CreatePaymentCommand command, CancellationToken cancellationToken)
     {
-        var order = await dbContext.Orders.FirstOrDefaultAsync(
-            o => o.Id == command.OrderId && o.UserId == command.UserId, cancellationToken);
+        var order = await dbContext.Orders
+            .FirstOrDefaultAsync(o => o.Id == command.OrderId && o.UserId == command.UserId, cancellationToken);
 
         if (order is null)
             return Result.Failure<PaymentResponse>(Error.NotFound("Order.NotFound",

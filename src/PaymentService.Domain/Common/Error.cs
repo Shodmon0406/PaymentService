@@ -1,11 +1,14 @@
-﻿namespace PaymentService.Domain.Common;
+﻿using System.Text.Json.Serialization;
 
-public class Error
+namespace PaymentService.Domain.Common;
+
+public sealed record Error
 {
     public static readonly Error None = new(string.Empty, string.Empty, ErrorType.None);
     public static readonly Error NullValue = new("General.Null", "Null value was provided", ErrorType.Failure);
 
-    private Error(string code, string message, ErrorType type)
+    [JsonConstructor]
+    public Error(string code, string message, ErrorType type)
     {
         Code = code;
         Message = message;

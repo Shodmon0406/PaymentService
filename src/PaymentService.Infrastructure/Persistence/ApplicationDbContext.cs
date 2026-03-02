@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PaymentService.Application.Common;
+using PaymentService.Domain.Entities.Idempotency;
 using PaymentService.Domain.Entities.Orders;
 using PaymentService.Domain.Entities.Payments;
 using PaymentService.Domain.Entities.Users;
@@ -21,6 +22,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     // Payment
     public DbSet<Payment> Payments => Set<Payment>();
     
+    // Idempotency
+    public DbSet<IdempotencyKey> IdempotencyKeys => Set<IdempotencyKey>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

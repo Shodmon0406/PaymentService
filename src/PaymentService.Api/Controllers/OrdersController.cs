@@ -18,13 +18,16 @@ public sealed class OrdersController(ISender sender, ICurrentUserService current
     [ProducesResponseType(typeof(OrderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> CreateOrder(CreateOrderRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateOrder(
+        [FromBody] CreateOrderRequest request, 
+        [FromHeader(Name = "Idempotency-key")] string idempotencyKey,
+        CancellationToken cancellationToken)
     {
         var userId = currentUserService.UserId;
         if (userId is null)
             return Unauthorized();
 
-        var command = new CreateOrderCommand(userId.Value, request.Amount, request.Currency);
+        var command = new CreateOrderCommand(userId.Value, request.Amount, request.Currency, idempotencyKey);
         var result = await sender.Send(command, cancellationToken);
 
         return result.ToActionResult();

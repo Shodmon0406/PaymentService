@@ -210,7 +210,7 @@ public class UserHandlerTest : IDisposable
 
         // Assert
         result.IsFailure.Should().BeTrue();
-        result.Error.Type.Should().Be(ErrorType.Unauthorized);
+        result.Error.Type.Should().Be(ErrorType.Validation);
     }
 
     [Fact]

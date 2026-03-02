@@ -74,7 +74,7 @@ public class PaymentHandlerTests : IDisposable
         var handler = new CreatePaymentCommandHandler(ctx);
 
         // Act
-        var result = await handler.Handle(new CreatePaymentCommand(user.Id, order.Id), CancellationToken.None);
+        var result = await handler.Handle(new CreatePaymentCommand(user.Id, order.Id, Guid.NewGuid().ToString("N")), CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -103,7 +103,7 @@ public class PaymentHandlerTests : IDisposable
         var handler = new CreatePaymentCommandHandler(ctx);
 
         // Act
-        var result = await handler.Handle(new CreatePaymentCommand(user.Id, order.Id), CancellationToken.None);
+        var result = await handler.Handle(new CreatePaymentCommand(user.Id, order.Id, Guid.NewGuid().ToString("N")), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -125,7 +125,7 @@ public class PaymentHandlerTests : IDisposable
         var handler = new CreatePaymentCommandHandler(ctx);
 
         // Act
-        var result = await handler.Handle(new CreatePaymentCommand(user.Id, order.Id), CancellationToken.None);
+        var result = await handler.Handle(new CreatePaymentCommand(user.Id, order.Id, Guid.NewGuid().ToString("N")), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -142,7 +142,7 @@ public class PaymentHandlerTests : IDisposable
         var handler = new CreatePaymentCommandHandler(ctx);
 
         // Act
-        var result = await handler.Handle(new CreatePaymentCommand(user.Id, Guid.NewGuid()), CancellationToken.None);
+        var result = await handler.Handle(new CreatePaymentCommand(user.Id, Guid.NewGuid(), Guid.NewGuid().ToString("N")), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -161,7 +161,7 @@ public class PaymentHandlerTests : IDisposable
         var handler = new CreatePaymentCommandHandler(ctx);
 
         // Act
-        var result = await handler.Handle(new CreatePaymentCommand(user2.Id, order.Id), CancellationToken.None);
+        var result = await handler.Handle(new CreatePaymentCommand(user2.Id, order.Id, Guid.NewGuid().ToString("N")), CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -180,7 +180,7 @@ public class PaymentHandlerTests : IDisposable
 
         for (var i = 0; i < 3; i++)
         {
-            await handler.Handle(new CreatePaymentCommand(user.Id, order.Id), CancellationToken.None);
+            await handler.Handle(new CreatePaymentCommand(user.Id, order.Id, Guid.NewGuid().ToString("N")), CancellationToken.None);
             await Task.Delay(100);
         }
 

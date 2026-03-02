@@ -17,7 +17,7 @@ public class AuthEndpointsTests(PaymentServiceWebApplicationFactory factory)
         var client = factory.CreateClient();
 
         // Act
-        var auth = await AuthHelper.RegisterUserAsync(client, "+992123456789", "test1@mail.com", "Test User");
+        var auth = await AuthHelper.RegisterUserAsync(client, "+992123456789", "test1@mail100.com");
 
         // Assert
         auth.AccessToken.Should().NotBeNullOrWhiteSpace();
@@ -30,7 +30,7 @@ public class AuthEndpointsTests(PaymentServiceWebApplicationFactory factory)
     {
         // Arrange
         var client = factory.CreateClient();
-        await AuthHelper.RegisterUserAsync(client, "+992123456780", "tes2t@mail.com", "Test User");
+        await AuthHelper.RegisterUserAsync(client, "+992123456780", "tes2t@mail100.com");
 
         // Act
         var auth = await AuthHelper.LoginUserAsync(client, "+992123456780");
@@ -46,7 +46,7 @@ public class AuthEndpointsTests(PaymentServiceWebApplicationFactory factory)
     {
         // Arrange
         var client = factory.CreateClient();
-        var auth = await AuthHelper.RegisterAndLoginUserAsync(client, "+992123456781", "test3@mail.com", "Test User");
+        var auth = await AuthHelper.RegisterAndLoginUserAsync(client, "+992121456781", "test3@mail100.com");
         AuthHelper.SetBearerToken(client, auth.AccessToken);
 
         // Act
@@ -56,8 +56,8 @@ public class AuthEndpointsTests(PaymentServiceWebApplicationFactory factory)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var user = (await response.Content.ReadFromJsonAsync<CurrentUserResponse>())!;
         user.FullName.Should().Be("Test User");
-        user.PhoneNumber.Should().Be("+992123456781");
-        user.Email.Should().Be("test3@mail.com");
+        user.PhoneNumber.Should().Be("+992121456781");
+        user.Email.Should().Be("test3@mail100.com");
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class AuthEndpointsTests(PaymentServiceWebApplicationFactory factory)
     {
         // Arrange
         var client = factory.CreateClient();
-        var auth = await AuthHelper.RegisterAndLoginUserAsync(client, "+992123456782", "test4@mail.com", "Test User");
+        var auth = await AuthHelper.RegisterAndLoginUserAsync(client, "+992123156782", "test4@mail100.com");
 
         // Act
         var refreshRequest = new RefreshTokenRequest(auth.RefreshToken);
@@ -117,7 +117,7 @@ public class AuthEndpointsTests(PaymentServiceWebApplicationFactory factory)
     {
         // Arrange
         var client = factory.CreateClient();
-        var auth = await AuthHelper.RegisterAndLoginUserAsync(client, "+992123456783", "test5@mail.com");
+        var auth = await AuthHelper.RegisterAndLoginUserAsync(client, "+992123416783", "test5@mail100.com");
 
         var revokeRequest = new RevokeRefreshTokenRequest(auth.RefreshToken);
         AuthHelper.SetBearerToken(client, auth.AccessToken);
@@ -135,13 +135,13 @@ public class AuthEndpointsTests(PaymentServiceWebApplicationFactory factory)
     }
 
     [Fact]
-    public async Task Register_Duplicate_PhoneNumber_Should_Return_BadRequest()
+    public async Task Register_Duplicate_PhoneNumber_Should_Return_Conflict()
     {
         // Arrange
         var client = factory.CreateClient();
-        await AuthHelper.RegisterUserAsync(client, "+992123456784", "test6@mail.com");
+        await AuthHelper.RegisterUserAsync(client, "+992123456784", "test6@mail100.com");
         
-        var request = new RegisterRequest("+992123456784", "test7@mail.com", "Test User", "Passw0rd1");
+        var request = new RegisterRequest("+992123456784", "test7@mail100.com", "Test User", "Passw0rd1");
 
         // Act
         var response = await client.PostAsJsonAsync("/api/v1/auth/register", request);

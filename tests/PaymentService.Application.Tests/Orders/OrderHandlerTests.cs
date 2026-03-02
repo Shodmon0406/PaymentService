@@ -62,8 +62,7 @@ public class OrderHandlerTests : IDisposable
         var handler = new CreateOrderCommandHandler(ctx);
 
         // Act
-        var result = await handler.Handle(
-            new CreateOrderCommand(user.Id, 100m, "TJS"),
+        var result = await handler.Handle(new CreateOrderCommand(user.Id, 100m, "TJS", Guid.NewGuid().ToString()),
             CancellationToken.None);
 
         // Assert
@@ -93,7 +92,7 @@ public class OrderHandlerTests : IDisposable
 
         // Act
         var result = await handler.Handle(
-            new CreateOrderCommand(user.Id, -50m, "TJS"),
+            new CreateOrderCommand(user.Id, -50m, "TJS", Guid.NewGuid().ToString()),
             CancellationToken.None);
 
         // Assert
@@ -110,7 +109,7 @@ public class OrderHandlerTests : IDisposable
         var handler = new CreateOrderCommandHandler(ctx);
 
         // Act
-        var result = await handler.Handle(new CreateOrderCommand(user.Id, 100m, "INVALID"),
+        var result = await handler.Handle(new CreateOrderCommand(user.Id, 100m, "INVALID", Guid.NewGuid().ToString()),
             CancellationToken.None);
 
         // Assert
@@ -127,7 +126,7 @@ public class OrderHandlerTests : IDisposable
 
         var createHandler = new CreateOrderCommandHandler(ctx);
         var createResult =
-            await createHandler.Handle(new CreateOrderCommand(user.Id, 100m, "TJS"), CancellationToken.None);
+            await createHandler.Handle(new CreateOrderCommand(user.Id, 100m, "TJS", Guid.NewGuid().ToString()), CancellationToken.None);
         var orderId = createResult.Value.Id;
 
         var getHandler = new GetOrderByIdQueryHandler(ctx);
@@ -172,7 +171,7 @@ public class OrderHandlerTests : IDisposable
         var user2 = await CreateUserAsync("+992987654321", "test2@mail.com", "Test User 2");
 
         var createHandler = new CreateOrderCommandHandler(ctx);
-        var createResult = await createHandler.Handle(new CreateOrderCommand(user1.Id, 100m, "TJS"), CancellationToken.None);
+        var createResult = await createHandler.Handle(new CreateOrderCommand(user1.Id, 100m, "TJS", Guid.NewGuid().ToString()), CancellationToken.None);
         var orderId = createResult.Value.Id;
 
         var getHandler = new GetOrderByIdQueryHandler(ctx);

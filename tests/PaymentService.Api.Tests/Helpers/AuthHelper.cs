@@ -10,7 +10,7 @@ public static class AuthHelper
         HttpClient client,
         string phoneNumber,
         string email,
-        string fullName = "Test Testov",
+        string fullName = "Test User",
         string password = "Passw0rd1")
     {
         var registerRequest = new RegisterRequest(phoneNumber, email, fullName, password);
@@ -40,7 +40,7 @@ public static class AuthHelper
         HttpClient client,
         string phoneNumber,
         string email,
-        string fullName = "Test Testov",
+        string fullName = "Test User",
         string password = "Passw0rd1")
     {
         await RegisterUserAsync(client, phoneNumber, email, fullName, password);
@@ -51,6 +51,15 @@ public static class AuthHelper
     {
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", accessToken);
+    }
+    
+    public static void SetIdempotencyKey(HttpClient client, string idempotencyKey)
+    {
+        if (client.DefaultRequestHeaders.Contains("Idempotency-Key"))
+        {
+            client.DefaultRequestHeaders.Remove("Idempotency-Key");
+        }
+        client.DefaultRequestHeaders.Add("Idempotency-Key", idempotencyKey);
     }
 
     public static HttpRequestMessage CreateRequestWithIdempotencyKey(

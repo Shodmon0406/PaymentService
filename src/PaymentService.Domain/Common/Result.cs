@@ -1,12 +1,14 @@
-﻿namespace PaymentService.Domain.Common;
+﻿using System.Text.Json.Serialization;
+
+namespace PaymentService.Domain.Common;
 
 public class Result
 {
-    public bool IsSuccess { get; }
+    public bool IsSuccess { get; init; }
     public bool IsFailure => !IsSuccess;
-    public Error Error { get; }
+    public Error Error { get; init; }
 
-    protected Result(bool isSuccess, Error error)
+    public Result(bool isSuccess, Error error)
     {
         if (isSuccess && error != Error.None)
             throw new InvalidOperationException("Success result cannot have an error");
@@ -17,6 +19,9 @@ public class Result
         IsSuccess = isSuccess;
         Error = error;
     }
+
+    [JsonConstructor]
+    public Result() { }
 
     public static Result Success() => new(true, Error.None);
 
@@ -29,16 +34,19 @@ public class Result
 
 public class Result<T> : Result
 {
-    private readonly T? _value;
-    protected internal Result(T value, bool isSuccess, Error error)
+    [JsonConstructor]
+    public Result(T value, bool isSuccess, Error error)
         : base(isSuccess, error)
     {
-        _value = value;
+        Value = value;
     }
 
-    public T Value => IsSuccess 
-        ? _value! 
-        : throw new InvalidOperationException("Cannot access the value of a failure result");
+    public Result() { }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public T Value => (IsSuccess
+        ? field
+        : default)!;
     
     public static implicit operator Result<T>(T value) => value is not null 
         ? Success(value) 

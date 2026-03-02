@@ -68,7 +68,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
     private async Task<Guid> CreateOrderAsync(Guid userId, decimal amount = 100m, string currency = "TJS")
     {
         var handler = new CreateOrderCommandHandler(CreateDbContext());
-        var command = new CreateOrderCommand(userId, amount, currency);
+        var command = new CreateOrderCommand(userId, amount, currency, Guid.NewGuid().ToString());
         var result = await handler.Handle(command, CancellationToken.None);
         result.IsSuccess.Should().BeTrue();
         return result.Value.Id;
@@ -77,7 +77,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
     private async Task<Guid> CreatePaymentAsync(Guid userId, Guid orderId)
     {
         var handler = new CreatePaymentCommandHandler(CreateDbContext());
-        var command = new CreatePaymentCommand(userId, orderId);
+        var command = new CreatePaymentCommand(userId, orderId, Guid.NewGuid().ToString("N"));
         var result = await handler.Handle(command, CancellationToken.None);
         result.IsSuccess.Should().BeTrue();
         return result.Value.Id;
@@ -99,7 +99,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
         var paymentId = await CreatePaymentAsync(userId, orderId);
 
         var handler = CreateHandler();
-        var command = new ConfirmPaymentCommand(userId, paymentId);
+        var command = new ConfirmPaymentCommand(userId, paymentId, Guid.NewGuid().ToString("N"));
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -124,7 +124,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
         var nonExistentPaymentId = Guid.NewGuid();
 
         var handler = CreateHandler();
-        var command = new ConfirmPaymentCommand(userId, nonExistentPaymentId);
+        var command = new ConfirmPaymentCommand(userId, nonExistentPaymentId, Guid.NewGuid().ToString("N"));
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -150,7 +150,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
         await context.SaveChangesAsync();
 
         var confirmHandler = CreateHandler();
-        var command = new ConfirmPaymentCommand(userId, firstPaymentId);
+        var command = new ConfirmPaymentCommand(userId, firstPaymentId, Guid.NewGuid().ToString("N"));
 
         // Act
         var confirmResult = await confirmHandler.Handle(command, CancellationToken.None);
@@ -169,7 +169,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
         var paymentId = await CreatePaymentAsync(userId, orderId);
 
         var confirmHandler = CreateHandler();
-        var confirmCommand = new ConfirmPaymentCommand(userId, paymentId);
+        var confirmCommand = new ConfirmPaymentCommand(userId, paymentId, Guid.NewGuid().ToString("N"));
         var confirmResult = await confirmHandler.Handle(confirmCommand, CancellationToken.None);
         confirmResult.IsSuccess.Should().BeTrue();
 
@@ -191,8 +191,8 @@ public class ConfirmPaymentHandlerTests : IDisposable
         var secondPaymentId = await CreatePaymentAsync(userId, orderId);
 
         var confirmHandler = CreateHandler();
-        var firstConfirmCommand = new ConfirmPaymentCommand(userId, firstPaymentId);
-        var secondConfirmCommand = new ConfirmPaymentCommand(userId, secondPaymentId);
+        var firstConfirmCommand = new ConfirmPaymentCommand(userId, firstPaymentId, Guid.NewGuid().ToString("N"));
+        var secondConfirmCommand = new ConfirmPaymentCommand(userId, secondPaymentId, Guid.NewGuid().ToString("N"));
 
         var firstConfirmResult = await confirmHandler.Handle(firstConfirmCommand, CancellationToken.None);
         firstConfirmResult.IsSuccess.Should().BeTrue();
@@ -217,8 +217,8 @@ public class ConfirmPaymentHandlerTests : IDisposable
         var handler1 = CreateHandler();
         var handler2 = CreateHandler();
 
-        var command1 = new ConfirmPaymentCommand(userId, paymentId);
-        var command2 = new ConfirmPaymentCommand(userId, paymentId);
+        var command1 = new ConfirmPaymentCommand(userId, paymentId, Guid.NewGuid().ToString("N"));
+        var command2 = new ConfirmPaymentCommand(userId, paymentId, Guid.NewGuid().ToString("N"));
 
         // Act
         var task1 = handler1.Handle(command1, CancellationToken.None);
@@ -252,7 +252,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
             }));
 
         var handler = CreateHandler(unavailableProvider);
-        var command = new ConfirmPaymentCommand(userId, paymentId);
+        var command = new ConfirmPaymentCommand(userId, paymentId, Guid.NewGuid().ToString("N"));
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -282,7 +282,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
             }));
 
         var handler = CreateHandler(decliningProvider);
-        var command = new ConfirmPaymentCommand(userId, paymentId);
+        var command = new ConfirmPaymentCommand(userId, paymentId, Guid.NewGuid().ToString("N"));
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
