@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PaymentService.Api.Common.Errors;
+using PaymentService.Api.Common.Result;
 using PaymentService.Application.Auth;
 using PaymentService.Application.Features.Orders.Commands.CreateOrder;
 using PaymentService.Application.Features.Orders.DTOs;

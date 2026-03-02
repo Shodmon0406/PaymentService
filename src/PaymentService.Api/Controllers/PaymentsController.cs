@@ -1,7 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PaymentService.Api.Common.Errors;
+using Microsoft.AspNetCore.RateLimiting;
+using PaymentService.Api.Common.RateLimiting;
+using PaymentService.Api.Common.Result;
 using PaymentService.Application.Auth;
 using PaymentService.Application.Features.Payments.Commands.ConfirmPayment;
 using PaymentService.Application.Features.Payments.Commands.CreatePayment;
@@ -53,6 +55,7 @@ public sealed class PaymentsController(ISender sender, ICurrentUserService curre
 
     [HttpPost("{paymentId:guid}/confirm")]
     [Authorize("RequireUserRole")]
+    [EnableRateLimiting(RateLimitingExtensions.PolicyNames.PaymentConfirm)]
     [ProducesResponseType(typeof(PaymentResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

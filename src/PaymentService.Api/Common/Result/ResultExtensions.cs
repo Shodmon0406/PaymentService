@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PaymentService.Domain.Common;
 
-namespace PaymentService.Api.Common.Errors;
+namespace PaymentService.Api.Common.Result;
 
 public static class ResultExtensions
 {
-    public static IActionResult ToActionResult(this Result result)
+    public static IActionResult ToActionResult(this Domain.Common.Result result)
     {
         if (result.IsSuccess)
         {

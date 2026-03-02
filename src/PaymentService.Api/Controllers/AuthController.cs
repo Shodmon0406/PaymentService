@@ -1,7 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PaymentService.Api.Common.Errors;
+using Microsoft.AspNetCore.RateLimiting;
+using PaymentService.Api.Common.RateLimiting;
+using PaymentService.Api.Common.Result;
 using PaymentService.Application.Auth;
 using PaymentService.Application.Features.Users.Commands.Login;
 using PaymentService.Application.Features.Users.Commands.RefreshToken;
@@ -14,6 +16,7 @@ namespace PaymentService.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/auth")]
+[EnableRateLimiting(RateLimitingExtensions.PolicyNames.Auth)]
 public sealed class AuthController(ISender sender, ICurrentUserService currentUserService) : ControllerBase
 {
     [HttpPost("register")]

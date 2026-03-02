@@ -52,14 +52,11 @@ public class PaymentsEndpointsTests(PaymentServiceWebApplicationFactory factory)
     {
         // Arrange
         var (client, order) = await SetupOrderAsync("+992123456792", "payment2@mail102.com");
-        var key = Guid.NewGuid().ToString();
+        AuthHelper.SetIdempotencyKey(client, Guid.NewGuid().ToString("N"));
 
         // Act
-        var request1 = AuthHelper.CreateRequestWithIdempotencyKey(HttpMethod.Post, $"api/v1/payments/{order.Id}", key);
-        var request2 = AuthHelper.CreateRequestWithIdempotencyKey(HttpMethod.Post, $"api/v1/payments/{order.Id}", key);
-
-        var response1 = await client.SendAsync(request1);
-        var response2 = await client.SendAsync(request2);
+        var response1 = await client.PostAsync($"api/v1/payments/{order.Id}", null);
+        var response2 = await client.PostAsync($"api/v1/payments/{order.Id}", null);
 
         // Assert
         response1.StatusCode.Should().Be(HttpStatusCode.OK);

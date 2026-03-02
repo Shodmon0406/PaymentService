@@ -61,14 +61,4 @@ public static class AuthHelper
         }
         client.DefaultRequestHeaders.Add("Idempotency-Key", idempotencyKey);
     }
-
-    public static HttpRequestMessage CreateRequestWithIdempotencyKey(
-        HttpMethod method, 
-        string url, 
-        string idempotencyKey)
-    {
-        var request = new HttpRequestMessage(method, url);
-        request.Headers.Add("Idempotency-Key", idempotencyKey);
-        return request;
-    }
 }
