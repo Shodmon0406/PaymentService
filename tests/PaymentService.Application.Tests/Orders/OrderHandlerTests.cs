@@ -1,6 +1,8 @@
 ﻿using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
 using PaymentService.Application.Features.Orders.Commands.CreateOrder;
 using PaymentService.Application.Features.Orders.Queries.GetOrderById;
 using PaymentService.Domain.Common;
@@ -13,6 +15,8 @@ namespace PaymentService.Application.Tests.Orders;
 public class OrderHandlerTests : IDisposable
 {
     private readonly SqliteConnection _connection;
+    private readonly ILogger<CreateOrderCommandHandler> _createLogger;
+    private readonly ILogger<GetOrderByIdQueryHandler> _getOrderByIdQueryLogger;
 
     public OrderHandlerTests()
     {
@@ -21,6 +25,9 @@ public class OrderHandlerTests : IDisposable
 
         using var ctx = CreateContext();
         ctx.Database.EnsureCreated();
+        
+        _createLogger = Substitute.For<ILogger<CreateOrderCommandHandler>>();
+        _getOrderByIdQueryLogger = Substitute.For<ILogger<GetOrderByIdQueryHandler>>();
     }
 
     private ApplicationDbContext CreateContext()
@@ -59,7 +66,7 @@ public class OrderHandlerTests : IDisposable
         var ctx = CreateContext();
         var user = await CreateUserAsync();
 
-        var handler = new CreateOrderCommandHandler(ctx);
+        var handler = new CreateOrderCommandHandler(ctx, _createLogger);
 
         // Act
         var result = await handler.Handle(new CreateOrderCommand(user.Id, 100m, "TJS", Guid.NewGuid().ToString()),
@@ -88,7 +95,7 @@ public class OrderHandlerTests : IDisposable
         var ctx = CreateContext();
         var user = await CreateUserAsync();
 
-        var handler = new CreateOrderCommandHandler(ctx);
+        var handler = new CreateOrderCommandHandler(ctx, _createLogger);
 
         // Act
         var result = await handler.Handle(
@@ -106,7 +113,7 @@ public class OrderHandlerTests : IDisposable
         // Arrange
         var ctx = CreateContext();
         var user = await CreateUserAsync();
-        var handler = new CreateOrderCommandHandler(ctx);
+        var handler = new CreateOrderCommandHandler(ctx, _createLogger);
 
         // Act
         var result = await handler.Handle(new CreateOrderCommand(user.Id, 100m, "INVALID", Guid.NewGuid().ToString()),
@@ -124,12 +131,12 @@ public class OrderHandlerTests : IDisposable
         var ctx = CreateContext();
         var user = await CreateUserAsync();
 
-        var createHandler = new CreateOrderCommandHandler(ctx);
+        var createHandler = new CreateOrderCommandHandler(ctx, _createLogger);
         var createResult =
             await createHandler.Handle(new CreateOrderCommand(user.Id, 100m, "TJS", Guid.NewGuid().ToString()), CancellationToken.None);
         var orderId = createResult.Value.Id;
 
-        var getHandler = new GetOrderByIdQueryHandler(ctx);
+        var getHandler = new GetOrderByIdQueryHandler(ctx, _getOrderByIdQueryLogger);
 
         // Act
         var getResult = await getHandler.Handle(new GetOrderByIdQuery(orderId, user.Id), CancellationToken.None);
@@ -151,7 +158,7 @@ public class OrderHandlerTests : IDisposable
         // Arrange
         var ctx = CreateContext();
         var user = await CreateUserAsync();
-        var getHandler = new GetOrderByIdQueryHandler(ctx);
+        var getHandler = new GetOrderByIdQueryHandler(ctx, _getOrderByIdQueryLogger);
 
         // Act
         var getResult = await getHandler.Handle(new GetOrderByIdQuery(Guid.NewGuid(), user.Id),
@@ -170,11 +177,11 @@ public class OrderHandlerTests : IDisposable
         var user1 = await CreateUserAsync("+992123456789", "test1@mail.com", "Test User 1");
         var user2 = await CreateUserAsync("+992987654321", "test2@mail.com", "Test User 2");
 
-        var createHandler = new CreateOrderCommandHandler(ctx);
+        var createHandler = new CreateOrderCommandHandler(ctx, _createLogger);
         var createResult = await createHandler.Handle(new CreateOrderCommand(user1.Id, 100m, "TJS", Guid.NewGuid().ToString()), CancellationToken.None);
         var orderId = createResult.Value.Id;
 
-        var getHandler = new GetOrderByIdQueryHandler(ctx);
+        var getHandler = new GetOrderByIdQueryHandler(ctx, _getOrderByIdQueryLogger);
 
         // Act
         var getResult = await getHandler.Handle(new GetOrderByIdQuery(orderId, user2.Id),

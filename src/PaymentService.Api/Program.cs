@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using PaymentService.Api.Common.RateLimiting;
 using PaymentService.Api.Common.Swagger;
+using PaymentService.Api.Middleware;
 using PaymentService.Application;
 using PaymentService.Infrastructure;
 using PaymentService.Infrastructure.Persistence;
@@ -8,10 +10,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Rate limiting
+builder.Services.Configure<RateLimitingSettings>(
+    builder.Configuration.GetSection(RateLimitingSettings.SectionName));
+builder.Services.AddApiRateLimiting();
+
 
 builder.Services.AddSwagger();
 
@@ -42,6 +52,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 

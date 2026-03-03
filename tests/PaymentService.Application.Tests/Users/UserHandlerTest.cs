@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using PaymentService.Application.Auth;
 using PaymentService.Application.Features.Users.Commands.Login;
@@ -20,6 +21,11 @@ public class UserHandlerTest : IDisposable
     private readonly SqliteConnection _connection;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IRefreshTokenGenerator _refreshTokenGenerator;
+    private readonly ILogger<RegisterCommandHandler> _registerLogger;
+    private readonly ILogger<LoginCommandHandler> _loginLogger;
+    private readonly ILogger<RefreshTokenCommandHandler> _refreshTokenLogger;
+    private readonly ILogger<RevokeRefreshTokenCommandHandler> _revokeRefreshTokenLogger;
+    private readonly ILogger<GetCurrentUserQueryHandler> _getCurrentUserLogger;
 
     public UserHandlerTest()
     {
@@ -34,6 +40,12 @@ public class UserHandlerTest : IDisposable
 
         _refreshTokenGenerator = Substitute.For<IRefreshTokenGenerator>();
         _refreshTokenGenerator.Generate().Returns(_ => Guid.NewGuid().ToString("N"));
+        
+        _registerLogger = Substitute.For<ILogger<RegisterCommandHandler>>();
+        _loginLogger = Substitute.For<ILogger<LoginCommandHandler>>();
+        _refreshTokenLogger = Substitute.For<ILogger<RefreshTokenCommandHandler>>();
+        _revokeRefreshTokenLogger = Substitute.For<ILogger<RevokeRefreshTokenCommandHandler>>();
+        _getCurrentUserLogger = Substitute.For<ILogger<GetCurrentUserQueryHandler>>();
     }
 
     private ApplicationDbContext CreateContext()
@@ -57,7 +69,7 @@ public class UserHandlerTest : IDisposable
         string fullName = "Test User",
         string password = "Password1")
     {
-        var handler = new RegisterCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator);
+        var handler = new RegisterCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator, _registerLogger);
         var command = new RegisterCommand(phone, email, fullName, password, "127.0.0.1");
         var result = await handler.Handle(command, CancellationToken.None);
         return result.Value;
@@ -67,7 +79,7 @@ public class UserHandlerTest : IDisposable
     public async Task Register_ShouldSucceed()
     {
         // Arrange
-        var handler = new RegisterCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator);
+        var handler = new RegisterCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator, _registerLogger);
         var command = new RegisterCommand("+998901234567", "test@mail.com", "Test User", "Password1", "127.0.0.1");
 
         // Act
@@ -87,7 +99,7 @@ public class UserHandlerTest : IDisposable
     {
         // Arrange
         await RegisterUserAsync(phone: "+992901234567", email: "test1@mail.com");
-        var handler = new RegisterCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator);
+        var handler = new RegisterCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator, _registerLogger);
         var command = new RegisterCommand("+992901234567", "test2@mail.com", "Other User", "Password1", "127.0.0.1");
 
         // Act
@@ -103,7 +115,7 @@ public class UserHandlerTest : IDisposable
     {
         // Arrange
         await RegisterUserAsync(phone: "+992901234567", email: "test@mail.com");
-        var handler = new RegisterCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator);
+        var handler = new RegisterCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator, _registerLogger);
         var command = new RegisterCommand("+992907654321", "test@mail.com", "Other User", "Password1", "127.0.0.1");
 
         // Act
@@ -118,7 +130,7 @@ public class UserHandlerTest : IDisposable
     public async Task Register_InvalidPassword_ShouldFail()
     {
         // Arrange
-        var handler = new RegisterCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator);
+        var handler = new RegisterCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator, _registerLogger);
         var command = new RegisterCommand("+998901234567", "test@mail.com", "Test User", "pass", "127.0.0.1");
 
         // Act
@@ -134,7 +146,7 @@ public class UserHandlerTest : IDisposable
     {
         // Arrange
         await RegisterUserAsync();
-        var handler = new LoginCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator);
+        var handler = new LoginCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator, _loginLogger);
 
         // Act
         var result = await handler.Handle(new LoginCommand("+992901234567", "Password1", "127.0.0.1"),
@@ -153,7 +165,7 @@ public class UserHandlerTest : IDisposable
     {
         // Arrange
         await RegisterUserAsync();
-        var handler = new LoginCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator);
+        var handler = new LoginCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator, _loginLogger);
 
         // Act
         var result = await handler.Handle(new LoginCommand("+998901234567", "WrongPassword", "127.0.0.1"),
@@ -168,7 +180,7 @@ public class UserHandlerTest : IDisposable
     public async Task Login_WithNonexistentPhone_ShouldFail()
     {
         // Arrange
-        var handler = new LoginCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator);
+        var handler = new LoginCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator, _loginLogger);
 
         // Act
         var result = await handler.Handle(new LoginCommand("+998901234567", "Password1", "127.0.0.1"),
@@ -186,7 +198,7 @@ public class UserHandlerTest : IDisposable
         var registered = await RegisterUserAsync();
         var originalToken = registered.RefreshToken;
 
-        var handler = new RefreshTokenCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator);
+        var handler = new RefreshTokenCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator, _refreshTokenLogger);
 
         // Act
         var result = await handler.Handle(new RefreshTokenCommand(originalToken, "127.0.0.1"), CancellationToken.None);
@@ -202,7 +214,7 @@ public class UserHandlerTest : IDisposable
     public async Task RefreshToken_WithInvalidToken_ShouldFail()
     {
         // Arrange
-        var handler = new RefreshTokenCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator);
+        var handler = new RefreshTokenCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator, _refreshTokenLogger);
 
         // Act
         var result =
@@ -225,7 +237,7 @@ public class UserHandlerTest : IDisposable
         refreshToken!.Revoke("127.0.0.1", "Testing revoke");
         await ctx.SaveChangesAsync();
 
-        var handler = new RefreshTokenCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator);
+        var handler = new RefreshTokenCommandHandler(CreateContext(), _jwtTokenService, _refreshTokenGenerator, _refreshTokenLogger);
 
         // Act
         var result = await handler.Handle(new RefreshTokenCommand(originalToken, "127.0.0.1"), CancellationToken.None);
@@ -242,7 +254,7 @@ public class UserHandlerTest : IDisposable
         var registered = await RegisterUserAsync();
         var originalToken = registered.RefreshToken;
 
-        var handler = new RevokeRefreshTokenCommandHandler(CreateContext());
+        var handler = new RevokeRefreshTokenCommandHandler(CreateContext(), _revokeRefreshTokenLogger);
 
         // Act
         var result = await handler.Handle(new RevokeRefreshTokenCommand(originalToken, "127.0.0.1"),
@@ -260,7 +272,7 @@ public class UserHandlerTest : IDisposable
     public async Task RevokeRefreshToken_WithInvalidToken_ShouldFail()
     {
         // Arrange
-        var handler = new RevokeRefreshTokenCommandHandler(CreateContext());
+        var handler = new RevokeRefreshTokenCommandHandler(CreateContext(), _revokeRefreshTokenLogger);
 
         // Act
         var result = await handler.Handle(new RevokeRefreshTokenCommand("invalid-token", "127.0.0.1"),
@@ -278,7 +290,7 @@ public class UserHandlerTest : IDisposable
         var registered = await RegisterUserAsync();
         var originalToken = registered.RefreshToken;
 
-        var handler = new RevokeRefreshTokenCommandHandler(CreateContext());
+        var handler = new RevokeRefreshTokenCommandHandler(CreateContext(), _revokeRefreshTokenLogger);
         await handler.Handle(new RevokeRefreshTokenCommand(originalToken, "127.0.0.1"), CancellationToken.None);
 
         // Act
@@ -297,7 +309,7 @@ public class UserHandlerTest : IDisposable
         var userId = registered.UserId;
 
         var ctx = CreateContext();
-        var handler = new GetCurrentUserQueryHandler(ctx);
+        var handler = new GetCurrentUserQueryHandler(ctx, _getCurrentUserLogger);
 
         // Act
         var result = await handler.Handle(new GetCurrentUserQuery(userId), CancellationToken.None);
@@ -315,7 +327,7 @@ public class UserHandlerTest : IDisposable
     public async Task GetCurrentUser_WithNonexistentUser_ShouldFail()
     {
         // Arrange
-        var handler = new GetCurrentUserQueryHandler(CreateContext());
+        var handler = new GetCurrentUserQueryHandler(CreateContext(), _getCurrentUserLogger);
 
         // Act
         var result = await handler.Handle(new GetCurrentUserQuery(Guid.NewGuid()), CancellationToken.None);

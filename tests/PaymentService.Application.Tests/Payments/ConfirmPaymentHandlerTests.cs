@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using PaymentService.Application.Auth;
 using PaymentService.Application.Features.Orders.Commands.CreateOrder;
@@ -23,6 +24,10 @@ public class ConfirmPaymentHandlerTests : IDisposable
     private readonly IOrderLockService _orderLockService;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IRefreshTokenGenerator _refreshTokenGenerator;
+    private readonly ILogger<CreateOrderCommandHandler> _createOrderLogger;
+    private readonly ILogger<CreatePaymentCommandHandler> _createPaymentLogger;
+    private readonly ILogger<ConfirmPaymentCommandHandler> _confirmPaymentLogger;
+    private readonly ILogger<RegisterCommandHandler> _registerUserLogger;
 
     public ConfirmPaymentHandlerTests()
     {
@@ -40,6 +45,11 @@ public class ConfirmPaymentHandlerTests : IDisposable
 
         _orderLockService = Substitute.For<IOrderLockService>();
         _orderLockService.AcquireLockAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        
+        _createOrderLogger = Substitute.For<ILogger<CreateOrderCommandHandler>>();
+        _createPaymentLogger = Substitute.For<ILogger<CreatePaymentCommandHandler>>();
+        _confirmPaymentLogger = Substitute.For<ILogger<ConfirmPaymentCommandHandler>>();
+        _registerUserLogger = Substitute.For<ILogger<RegisterCommandHandler>>();
     }
 
     private ApplicationDbContext CreateDbContext()
@@ -58,7 +68,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
 
     private async Task<Guid> RegisterUserAsync(string phone = "+992123456789", string email = "test@mail.com")
     {
-        var handler = new RegisterCommandHandler(CreateDbContext(), _jwtTokenService, _refreshTokenGenerator);
+        var handler = new RegisterCommandHandler(CreateDbContext(), _jwtTokenService, _refreshTokenGenerator, _registerUserLogger);
         var command = new RegisterCommand(phone, email, "Test Testov", "Passw0rd!", "127.0.0.1");
         var result = await handler.Handle(command, CancellationToken.None);
         result.IsSuccess.Should().BeTrue();
@@ -67,7 +77,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
 
     private async Task<Guid> CreateOrderAsync(Guid userId, decimal amount = 100m, string currency = "TJS")
     {
-        var handler = new CreateOrderCommandHandler(CreateDbContext());
+        var handler = new CreateOrderCommandHandler(CreateDbContext(), _createOrderLogger);
         var command = new CreateOrderCommand(userId, amount, currency, Guid.NewGuid().ToString());
         var result = await handler.Handle(command, CancellationToken.None);
         result.IsSuccess.Should().BeTrue();
@@ -76,7 +86,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
 
     private async Task<Guid> CreatePaymentAsync(Guid userId, Guid orderId)
     {
-        var handler = new CreatePaymentCommandHandler(CreateDbContext());
+        var handler = new CreatePaymentCommandHandler(CreateDbContext(), _createPaymentLogger);
         var command = new CreatePaymentCommand(userId, orderId, Guid.NewGuid().ToString("N"));
         var result = await handler.Handle(command, CancellationToken.None);
         result.IsSuccess.Should().BeTrue();
@@ -86,7 +96,7 @@ public class ConfirmPaymentHandlerTests : IDisposable
     private ConfirmPaymentCommandHandler CreateHandler(IPaymentProviderClient? paymentProvider = null)
     {
         paymentProvider ??= new FakePaymentProviderClient(new FakePaymentProviderOptions { SuccessRate = 1.0 });
-        return new ConfirmPaymentCommandHandler(CreateDbContext(), _orderLockService, paymentProvider);
+        return new ConfirmPaymentCommandHandler(CreateDbContext(), _orderLockService, paymentProvider, _confirmPaymentLogger);
     }
 
     [Fact]

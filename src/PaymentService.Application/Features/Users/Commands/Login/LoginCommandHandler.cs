@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PaymentService.Application.Auth;
 using PaymentService.Application.Common;
 using PaymentService.Application.Features.Users.DTOs;
@@ -11,13 +12,21 @@ namespace PaymentService.Application.Features.Users.Commands.Login;
 public sealed class LoginCommandHandler(
     IApplicationDbContext dbContext,
     IJwtTokenService jwtTokenService,
-    IRefreshTokenGenerator refreshTokenGenerator) : IRequestHandler<LoginCommand, Result<AuthResponse>>
+    IRefreshTokenGenerator refreshTokenGenerator,
+    ILogger<LoginCommandHandler> logger) : IRequestHandler<LoginCommand, Result<AuthResponse>>
 {
     public async Task<Result<AuthResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
+        logger.LogInformation("Handling LoginCommand for PhoneNumber: {PhoneNumber}", request.PhoneNumber);
+        
         var phoneNumber = PhoneNumber.Create(request.PhoneNumber);
         if (phoneNumber.IsFailure)
-            return Result.Failure<AuthResponse>(Error.Validation("Auth.InvalidPhoneNumber", "The provided phone number is invalid."));
+        {
+            logger.LogInformation("Invalid phone number: {PhoneNumber}", phoneNumber.Value);
+            
+            return Result.Failure<AuthResponse>(Error.Validation("Auth.InvalidPhoneNumber",
+                "The provided phone number is invalid."));
+        }
         
         var user = await dbContext.Users
             .Include(u => u.UserRoles)
@@ -25,7 +34,12 @@ public sealed class LoginCommandHandler(
             .FirstOrDefaultAsync(u => u.PhoneNumber.Value == phoneNumber.Value, cancellationToken);
         
         if (user is null || !user.VerifyPassword(request.Password))
-            return Result.Failure<AuthResponse>(Error.Unauthorized("Auth.InvalidCredentials", "Invalid phone number or password."));
+        {
+            logger.LogInformation("Invalid login attempt for PhoneNumber: {PhoneNumber}", request.PhoneNumber);
+            
+            return Result.Failure<AuthResponse>(Error.Unauthorized("Auth.InvalidCredentials",
+                "Invalid phone number or password."));
+        }
         
         var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
         
@@ -37,6 +51,8 @@ public sealed class LoginCommandHandler(
         await dbContext.SaveChangesAsync(cancellationToken);
         
         var accessToken = jwtTokenService.GenerateAccessToken(user, roles);
+        
+        logger.LogInformation("User {UserId} logged in successfully", user.Id);
         
         return Result.Success(new AuthResponse(accessToken, rawToken, user.Id, user.FullName));
     }

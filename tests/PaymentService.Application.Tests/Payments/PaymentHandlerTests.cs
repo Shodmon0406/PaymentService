@@ -1,8 +1,13 @@
 ﻿using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using PaymentService.Application.Features.Orders.Commands.CreateOrder;
+using PaymentService.Application.Features.Payments.Commands.ConfirmPayment;
 using PaymentService.Application.Features.Payments.Commands.CreatePayment;
 using PaymentService.Application.Features.Payments.Queries.GetPaymentsByOrder;
+using PaymentService.Application.Features.Users.Commands.Register;
 using PaymentService.Domain.Common;
 using PaymentService.Domain.Entities.Orders;
 using PaymentService.Domain.Entities.Users;
@@ -13,6 +18,8 @@ namespace PaymentService.Application.Tests.Payments;
 public class PaymentHandlerTests : IDisposable
 {
     private readonly SqliteConnection _connection;
+    private readonly ILogger<CreatePaymentCommandHandler> _createPaymentLogger;
+    private readonly ILogger<GetPaymentsByOrderQueryHandler> _getPaymentsByOrderLogger;
 
     public PaymentHandlerTests()
     {
@@ -21,6 +28,9 @@ public class PaymentHandlerTests : IDisposable
 
         using var ctx = CreateContext();
         ctx.Database.EnsureCreated();
+        
+        _createPaymentLogger = Substitute.For<ILogger<CreatePaymentCommandHandler>>();
+        _getPaymentsByOrderLogger = Substitute.For<ILogger<GetPaymentsByOrderQueryHandler>>();
     }
 
     private ApplicationDbContext CreateContext()
@@ -71,7 +81,7 @@ public class PaymentHandlerTests : IDisposable
         var user = await CreateUserAsync();
         var order = await CreateOrderAsync(user.Id);
 
-        var handler = new CreatePaymentCommandHandler(ctx);
+        var handler = new CreatePaymentCommandHandler(ctx, _createPaymentLogger);
 
         // Act
         var result = await handler.Handle(new CreatePaymentCommand(user.Id, order.Id, Guid.NewGuid().ToString("N")), CancellationToken.None);
@@ -100,7 +110,7 @@ public class PaymentHandlerTests : IDisposable
         dbOrder!.MarkAsPaid();
         await ctx.SaveChangesAsync();
 
-        var handler = new CreatePaymentCommandHandler(ctx);
+        var handler = new CreatePaymentCommandHandler(ctx, _createPaymentLogger);
 
         // Act
         var result = await handler.Handle(new CreatePaymentCommand(user.Id, order.Id, Guid.NewGuid().ToString("N")), CancellationToken.None);
@@ -122,7 +132,7 @@ public class PaymentHandlerTests : IDisposable
         dbOrder!.MarkAsCancelled();
         await ctx.SaveChangesAsync();
 
-        var handler = new CreatePaymentCommandHandler(ctx);
+        var handler = new CreatePaymentCommandHandler(ctx, _createPaymentLogger);
 
         // Act
         var result = await handler.Handle(new CreatePaymentCommand(user.Id, order.Id, Guid.NewGuid().ToString("N")), CancellationToken.None);
@@ -139,7 +149,7 @@ public class PaymentHandlerTests : IDisposable
         var ctx = CreateContext();
         var user = await CreateUserAsync();
 
-        var handler = new CreatePaymentCommandHandler(ctx);
+        var handler = new CreatePaymentCommandHandler(ctx, _createPaymentLogger);
 
         // Act
         var result = await handler.Handle(new CreatePaymentCommand(user.Id, Guid.NewGuid(), Guid.NewGuid().ToString("N")), CancellationToken.None);
@@ -158,7 +168,7 @@ public class PaymentHandlerTests : IDisposable
         var user2 = await CreateUserAsync(phone: "+992123456781", email: "test2@mail.com");
         var order = await CreateOrderAsync(user1.Id);
 
-        var handler = new CreatePaymentCommandHandler(ctx);
+        var handler = new CreatePaymentCommandHandler(ctx, _createPaymentLogger);
 
         // Act
         var result = await handler.Handle(new CreatePaymentCommand(user2.Id, order.Id, Guid.NewGuid().ToString("N")), CancellationToken.None);
@@ -176,7 +186,7 @@ public class PaymentHandlerTests : IDisposable
         var user = await CreateUserAsync();
         var order = await CreateOrderAsync(user.Id);
 
-        var handler = new CreatePaymentCommandHandler(ctx);
+        var handler = new CreatePaymentCommandHandler(ctx, _createPaymentLogger);
 
         for (var i = 0; i < 3; i++)
         {
@@ -184,7 +194,7 @@ public class PaymentHandlerTests : IDisposable
             await Task.Delay(100);
         }
 
-        var queryHandler = new GetPaymentsByOrderQueryHandler(ctx);
+        var queryHandler = new GetPaymentsByOrderQueryHandler(ctx, _getPaymentsByOrderLogger);
 
         // Act
         var result = await queryHandler.Handle(new GetPaymentsByOrderQuery(user.Id, order.Id), CancellationToken.None);
@@ -206,7 +216,7 @@ public class PaymentHandlerTests : IDisposable
         var user2 = await CreateUserAsync(phone: "+992123456781", email: "test2@mail.com");
         var order = await CreateOrderAsync(user1.Id);
 
-        var queryHandler = new GetPaymentsByOrderQueryHandler(ctx);
+        var queryHandler = new GetPaymentsByOrderQueryHandler(ctx, _getPaymentsByOrderLogger);
 
         // Act
         var result = await queryHandler.Handle(new GetPaymentsByOrderQuery(user2.Id, order.Id), CancellationToken.None);
@@ -223,7 +233,7 @@ public class PaymentHandlerTests : IDisposable
         var ctx = CreateContext();
         var user = await CreateUserAsync();
 
-        var queryHandler = new GetPaymentsByOrderQueryHandler(ctx);
+        var queryHandler = new GetPaymentsByOrderQueryHandler(ctx, _getPaymentsByOrderLogger);
 
         // Act
         var result = await queryHandler.Handle(new GetPaymentsByOrderQuery(user.Id, Guid.NewGuid()),

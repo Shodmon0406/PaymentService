@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using System.ComponentModel.DataAnnotations;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -23,7 +24,7 @@ public sealed class PaymentsController(ISender sender, ICurrentUserService curre
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> CreatePayment(
         [FromRoute] Guid orderId,
-        [FromHeader(Name = "Idempotency-key")] string idempotencyKey,
+        [FromHeader(Name = "Idempotency-key"), Required] string idempotencyKey,
         CancellationToken cancellationToken)
     {
         var userId = currentUserService.UserId;
@@ -36,23 +37,6 @@ public sealed class PaymentsController(ISender sender, ICurrentUserService curre
         return result.ToActionResult();
     }
 
-    [HttpGet("{orderId:guid}")]
-    [Authorize("RequireUserRole")]
-    [ProducesResponseType(typeof(PaymentResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetPaymentsByOrder([FromRoute] Guid orderId, CancellationToken cancellationToken)
-    {
-        var userId = currentUserService.UserId;
-        if (userId is null) 
-            return Unauthorized();
-
-        var query = new GetPaymentsByOrderQuery(userId.Value, orderId);
-        var result = await sender.Send(query, cancellationToken);
-
-        return result.ToActionResult();
-    }
-
     [HttpPost("{paymentId:guid}/confirm")]
     [Authorize("RequireUserRole")]
     [EnableRateLimiting(RateLimitingExtensions.PolicyNames.PaymentConfirm)]
@@ -61,7 +45,7 @@ public sealed class PaymentsController(ISender sender, ICurrentUserService curre
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ConfirmPayment(
         [FromRoute] Guid paymentId, 
-        [FromHeader(Name = "Idempotency-key")] string idempotencyKey,
+        [FromHeader(Name = "Idempotency-key"), Required] string idempotencyKey,
         CancellationToken cancellationToken)
     {
         var userId = currentUserService.UserId;

@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using System.ComponentModel.DataAnnotations;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PaymentService.Api.Common.Result;
@@ -6,6 +7,8 @@ using PaymentService.Application.Auth;
 using PaymentService.Application.Features.Orders.Commands.CreateOrder;
 using PaymentService.Application.Features.Orders.DTOs;
 using PaymentService.Application.Features.Orders.Queries.GetOrderById;
+using PaymentService.Application.Features.Payments.DTOs;
+using PaymentService.Application.Features.Payments.Queries.GetPaymentsByOrder;
 
 namespace PaymentService.Api.Controllers;
 
@@ -20,7 +23,7 @@ public sealed class OrdersController(ISender sender, ICurrentUserService current
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> CreateOrder(
         [FromBody] CreateOrderRequest request, 
-        [FromHeader(Name = "Idempotency-key")] string idempotencyKey,
+        [FromHeader(Name = "Idempotency-key"), Required] string idempotencyKey,
         CancellationToken cancellationToken)
     {
         var userId = currentUserService.UserId;
@@ -45,6 +48,23 @@ public sealed class OrdersController(ISender sender, ICurrentUserService current
             return Unauthorized();
 
         var query = new GetOrderByIdQuery(id, userId.Value);
+        var result = await sender.Send(query, cancellationToken);
+
+        return result.ToActionResult();
+    }
+
+    [HttpGet("{orderId:guid}/payments")]
+    [Authorize("RequireUserRole")]
+    [ProducesResponseType(typeof(PaymentResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetPaymentsByOrder([FromRoute] Guid orderId, CancellationToken cancellationToken)
+    {
+        var userId = currentUserService.UserId;
+        if (userId is null) 
+            return Unauthorized();
+
+        var query = new GetPaymentsByOrderQuery(userId.Value, orderId);
         var result = await sender.Send(query, cancellationToken);
 
         return result.ToActionResult();
