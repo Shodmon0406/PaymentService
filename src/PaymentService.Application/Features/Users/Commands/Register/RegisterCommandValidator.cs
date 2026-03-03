@@ -7,9 +7,8 @@ public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand
     public RegisterCommandValidator()
     {
         RuleFor(command => command.PhoneNumber)
-            .NotEmpty().WithMessage("PhoneNumber is required")
-            .EmailAddress().WithMessage("Invalid email format");
-        
+            .NotEmpty().WithMessage("PhoneNumber is required");
+
         RuleFor(command => command.Email)
             .NotEmpty().WithMessage("Email is required")
             .MaximumLength(100).WithMessage("Email must not exceed 100 characters")

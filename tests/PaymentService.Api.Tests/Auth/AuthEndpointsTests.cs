@@ -30,7 +30,7 @@ public class AuthEndpointsTests(PaymentServiceWebApplicationFactory factory)
     {
         // Arrange
         var client = factory.CreateClient();
-        await AuthHelper.RegisterUserAsync(client, "+992123456780", "tes2t@mail100.com");
+        await AuthHelper.RegisterUserAsync(client, "+992123456780", "test1231@mail.com");
 
         // Act
         var auth = await AuthHelper.LoginUserAsync(client, "+992123456780");

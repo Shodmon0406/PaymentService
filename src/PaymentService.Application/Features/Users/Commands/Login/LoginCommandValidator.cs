@@ -7,8 +7,7 @@ public sealed class LoginCommandValidator : AbstractValidator<LoginCommand>
     public LoginCommandValidator()
     {
         RuleFor(command => command.PhoneNumber)
-            .NotEmpty().WithMessage("Email is required")
-            .EmailAddress().WithMessage("Invalid email format");
+            .NotEmpty().WithMessage("PhoneNumber is required");
 
         RuleFor(command => command.Password)
             .NotEmpty().WithMessage("Password is required")

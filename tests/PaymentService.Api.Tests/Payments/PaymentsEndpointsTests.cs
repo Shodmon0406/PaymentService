@@ -80,7 +80,7 @@ public class PaymentsEndpointsTests(PaymentServiceWebApplicationFactory factory)
         // Act
         AuthHelper.SetIdempotencyKey(client, Guid.NewGuid().ToString("N"));
         await client.PostAsync($"/api/v1/payments/{order.Id}", null);
-        var listResponse = await client.GetAsync($"/api/v1/payments/{order.Id}");
+        var listResponse = await client.GetAsync($"/api/v1/orders/{order.Id}/payments");
 
         // Assert
         listResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -113,7 +113,7 @@ public class PaymentsEndpointsTests(PaymentServiceWebApplicationFactory factory)
         var orderId = Guid.NewGuid();
 
         // Act
-        var response = await client.GetAsync($"/api/v1/payments/{orderId}");
+        var response = await client.GetAsync($"/api/v1/orders/{orderId}/payments");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
