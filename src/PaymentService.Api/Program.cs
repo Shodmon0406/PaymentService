@@ -5,8 +5,22 @@ using PaymentService.Api.Middleware;
 using PaymentService.Application;
 using PaymentService.Infrastructure;
 using PaymentService.Infrastructure.Persistence;
+using Scalar.AspNetCore;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((ctx, services, configuration) => configuration
+    .ReadFrom.Configuration(ctx.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .Enrich.WithEnvironmentName());
+
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -26,6 +40,8 @@ builder.Services.AddApiRateLimiting();
 builder.Services.AddSwagger();
 
 var app = builder.Build();
+
+app.UseMiddleware<CorrelationIdMiddleware>();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
