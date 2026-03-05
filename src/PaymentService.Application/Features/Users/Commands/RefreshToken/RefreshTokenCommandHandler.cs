@@ -16,7 +16,7 @@ public sealed class RefreshTokenCommandHandler(
 {
     public async Task<Result<AuthResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Handling RefreshTokenCommand for refresh token: {RefreshToken}****", request.RefreshToken[..10]);
+        logger.LogInformation("Handling RefreshTokenCommand for refresh token");
         
         var user = await dbContext.Users
             .Include(u => u.RefreshTokens)
@@ -24,7 +24,7 @@ public sealed class RefreshTokenCommandHandler(
 
         if (user is null)
         {
-            logger.LogInformation("User not found for refresh token: {RefreshToken}****", request.RefreshToken[..10]);
+            logger.LogInformation("User not found for refresh token");
             
             return Result.Failure<AuthResponse>(Error.Validation("RefreshToken.Invalid", "Invalid refresh token."));
         }
@@ -34,7 +34,7 @@ public sealed class RefreshTokenCommandHandler(
         var revokeResult = user.RevokeRefreshToken(request.RefreshToken, request.IpAddress, newRawToken);
         if (revokeResult.IsFailure)
         {
-            logger.LogInformation("Failed to revoke refresh token: {RefreshToken}****. Reason: {Reason}", request.RefreshToken[..10], revokeResult.Error.Message);
+            logger.LogInformation("Failed to revoke refresh token. Reason: {Reason}", revokeResult.Error.Message);
             
             return Result.Failure<AuthResponse>(revokeResult.Error);
         }

@@ -13,7 +13,7 @@ public sealed class RevokeRefreshTokenCommandHandler(
 {
     public async Task<Result> Handle(RevokeRefreshTokenCommand request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Handling RevokeRefreshTokenCommand for refresh token: {RefreshToken}****", request.RefreshToken[..10]);
+        logger.LogInformation("Handling RevokeRefreshTokenCommand for refresh token");
         
         var user = await dbContext.Users
             .Include(u => u.RefreshTokens)
@@ -21,7 +21,7 @@ public sealed class RevokeRefreshTokenCommandHandler(
 
         if (user is null)
         {
-            logger.LogInformation("User not found for refresh token: {RefreshToken}****", request.RefreshToken[..10]);
+            logger.LogInformation("User not found for refresh token");
             
             return Result.Failure(Error.Unauthorized("RevokeRefreshToken.Invalid", "Invalid refresh token."));
         }
@@ -32,7 +32,7 @@ public sealed class RevokeRefreshTokenCommandHandler(
         
         await dbContext.SaveChangesAsync(cancellationToken);
         
-        logger.LogInformation("Successfully revoked refresh token: {RefreshToken}", request.RefreshToken);
+        logger.LogInformation("Successfully revoked refresh token");
         
         return Result.Success();
     }
